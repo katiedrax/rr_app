@@ -1,6 +1,8 @@
 # install packages
 
 library(shiny)
+library(tidyverse)
+library(googlesheets)
 
 ##################
 #### import data ####
