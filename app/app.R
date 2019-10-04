@@ -3,6 +3,7 @@
 library(shiny)
 library(tidyverse)
 library(googlesheets)
+library(gridExtra)
 
 ##################
 #### import data ####
@@ -14,7 +15,7 @@ df <- googlesheets::gs_url("https://docs.google.com/spreadsheets/d/1D4_k-8C_UENT
   googlesheets::gs_read(skip = 1)
 
 #df <- read.csv(file = "data/Comparison of Registered Reports - Sheet1.csv", stringsAsFactors = F, header = T, skip =1,
-               #na.strings = c("", NA), encoding = "UTF-8") 
+#na.strings = c("", NA), encoding = "UTF-8") 
 
 #df <- rename(df, "Includes pre-study peer review" = "X1..Includes.pre.study.peer.review", "Offers provisional pre-study acceptance" = "X2..Offers.provisional.pre.study.acceptance")
 
@@ -56,6 +57,9 @@ df$`Offers incremental (sequential) registration`<- gsub("[\n]", "No", df$`Offer
 df$`Offers incremental addition of unregistered studies`<- gsub("[\n]", "No", df$`Offers incremental addition of unregistered studies`)
 df$`Offered for qualitative research`<- gsub("[\n]", "No", df$`Offered for qualitative research`)
 
+# replace colnames
+
+colnames(df) <- gsub("Offered", "Offers RRs", colnames(df))
 
 # subset rows that do not have pre-study peer review OR don't offer IPA
 
@@ -65,6 +69,10 @@ not_rr <- df[(df$`Includes pre-study peer review`!= "Yes" | df$`Offers provision
 
 rr <- df[(df$`Includes pre-study peer review`== "Yes" & df$`Offers provisional pre-study acceptance` == "Yes"),]
 
+# summary tab input
+
+summ_tab <- colnames(rr)[!grepl("Journal", colnames(rr))]
+
 ######
 #app###
 #####
@@ -73,34 +81,49 @@ rr <- df[(df$`Includes pre-study peer review`== "Yes" & df$`Offers provisional p
 ui <- fluidPage(
   
   # Application title
-  titlePanel("Comparison of Registered Reports"),
+  titlePanel("Comparison of Registered Reports (RRs)"),
   
   # Sidebar with a select input for variables
   sidebarLayout(
     sidebarPanel(
-      #heading
-      h1("Select variable", align = "left"),
+      # journal tab
+      h1("'RR journal' tab", align = "left"),
       
       # help text
-      helpText("Select which variable you want to examine across journals offering Registered Reports"),
+      helpText("Select which journal you are interested in and a summary of its RR policy will be shown in the 'RR journal' tab"),
+      
+      # select journal
+      selectInput("jour", "RR journal", rr$Journal),
+      
+      #heading
+      h1("'Summary' tab", align = "left"),
+      
+      # help text
+      helpText("Select which policy you want to examine and a count of all the RR journals that offer this policy will be shown in the 'Summary' tab"),
       
       # select input
-      selectInput("vars", "Variable", colnames(rr)),
+      selectInput("vars", "Number of RR journals that:", summ_tab),
       
       # data source info
       hr(),
-      h2("The data"),
+      h4("Sample size"),
+      # number of rrs
       textOutput("rr_n"),
       p(),
       textOutput("not_rr_n"),
       p(),
-      helpText("Data from the Center for Open Science which can be found here:"), 
-      a("Comparison of Registered Reports Google Sheet", href = "https://docs.google.com/spreadsheets/d/1D4_k-8C_UENTRtbPzXfhjEyu3BfLxdOsn9j-otrO870/edit#gid=0")
+      h4("Data"),
+      p("Data from the Center for Open Science which can be found here:"), 
+      a("Comparison of RRs Google Sheet", href = "https://docs.google.com/spreadsheets/d/1D4_k-8C_UENTRtbPzXfhjEyu3BfLxdOsn9j-otrO870/edit#gid=0")
     ),
     
     # main panel is a table
     mainPanel(
-      tableOutput("table")
+      tabsetPanel(
+        tabPanel("RR journal",plotOutput("indiv", width = "100%", height = "700px")),
+        tabPanel("Summary", tableOutput("table"))
+        
+      )
     )
   )
 )
@@ -114,7 +137,7 @@ server <- function(input, output, session) {
   
   observe({
     #define input as variables in rr
-    updateSelectInput(session, "vars", choices = colnames(rr))
+    updateSelectInput(session, "vars", choices = summ_tab)
   })
   
   ################
@@ -122,21 +145,28 @@ server <- function(input, output, session) {
   ################
   
   output$rr_n <- renderText({
-    paste("To date (", format(Sys.time(), "%a %b %d"), ")", length(unique(rr$Journal)), "journals offer Registered Reports.", sep = " ")
+    paste("To date,", format(Sys.time(), "%a %b %d"), ",", length(unique(rr$Journal)), "journals offer RRs.", sep = " ")
   })
   
   output$not_rr_n <- renderText({
     paste(length(unique(not_rr$Journal)), 
-          "journals offer formats that do not qualify as Registered Reports but provide some similar features.", sep = " ")
+          "journals offer formats that do not qualify as RRs but provide some similar features.", sep = " ")
   })
   
   output$table <- renderTable({
-    # output table of each variable
+    #output table of each variable
     var <- subset(rr, select = input$vars)
     table(var, useNA = "ifany", dnn = colnames(var))
   })
   
-  
+  output$indiv <- renderPlot({
+    # output table of each variable
+    ob <- as.data.frame(rr[rr$Journal == input$jour, ])
+    colnames(ob) <- sapply(lapply(colnames(ob), strwrap, width=45), paste, collapse="\n")
+    ob <- t(ob)
+    gridExtra::grid.table(ob)
+    
+  })
 }
 
 # Run the application 
