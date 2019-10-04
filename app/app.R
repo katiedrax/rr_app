@@ -33,9 +33,29 @@ df[] <- lapply(df, function(x) gsub("[\u2713]", "Yes", x))
 
 df[is.na(df)] <- "No"
 
+# replace TBD
+
+df[df == "TBD"] <- "To be decided"
+
+# replace TBA
+
+df[df == "TBA"] <- "To be announced"
+
 # clean headers
 
 colnames(df) <- gsub("[0-9]\\. |[0-9][0-9]\\. ","", colnames(df))
+
+# replace all carriage return separately (lapply with str_replace_all, trimws and gsub doesn't seem to work)
+
+
+df$`Offered for meta-analysis` <- gsub("[\n]", "No", df$`Offered for meta-analysis`)
+df$`Offered for analyses of existing data sets` <- gsub("[\n]", "No", df$`Offered for analyses of existing data sets`)
+df$`Publishes Registered Reports only`<- gsub("[\n]", "No", df$`Publishes Registered Reports only`)
+df$`Publishes accepted protocols, in full or part, prior to study completion`<- gsub("[\n]", "No", df$`Publishes accepted protocols, in full or part, prior to study completion`)
+df$`Offers incremental (sequential) registration`<- gsub("[\n]", "No", df$`Offers incremental (sequential) registration`)
+df$`Offers incremental addition of unregistered studies`<- gsub("[\n]", "No", df$`Offers incremental addition of unregistered studies`)
+df$`Offered for qualitative research`<- gsub("[\n]", "No", df$`Offered for qualitative research`)
+
 
 # subset rows that do not have pre-study peer review OR don't offer IPA
 
@@ -65,7 +85,7 @@ ui <- fluidPage(
       helpText("Select which variable you want to examine across journals offering Registered Reports"),
       
       # select input
-      selectInput("vars", "Variable", "placeholder"),
+      selectInput("vars", "Variable", colnames(rr)),
       
       # data source info
       hr(),
