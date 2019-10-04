@@ -5,8 +5,8 @@ account: katiedrax
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1270871
-bundleId: 2468854
+bundleId: 2468890
 url: https://katiedrax.shinyapps.io/cos_registered_reports/
-when: 1570202831.63725
+when: 1570203865.3009
 asMultiple: FALSE
 asStatic: FALSE

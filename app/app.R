@@ -104,16 +104,18 @@ ui <- fluidPage(
       # select input
       selectInput("vars", "Number of RR journals that:", summ_tab),
       
-      # data source info
+      # data & code
       hr(),
       h4("Sample size"),
       # number of rrs
       textOutput("rr_n"),
       p(),
       textOutput("not_rr_n"),
+      hr(),
+      helpText("Code for the app is available here:"),
+      a("https://github.com/katiedrax/rr_app"),
       p(),
-      h4("Data"),
-      p("Data from the Center for Open Science which can be found here:"), 
+      helpText("Data is from the Center for Open Science and can be found here:"), 
       a("Comparison of RRs Google Sheet", href = "https://docs.google.com/spreadsheets/d/1D4_k-8C_UENTRtbPzXfhjEyu3BfLxdOsn9j-otrO870/edit#gid=0")
     ),
     
